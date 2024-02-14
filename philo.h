@@ -6,7 +6,7 @@
 /*   By: tstahlhu <tstahlhu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/08/31 12:04:39 by tstahlhu          #+#    #+#             */
-/*   Updated: 2024/02/13 17:07:45 by tstahlhu         ###   ########.fr       */
+/*   Updated: 2024/02/14 18:28:26 by tstahlhu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,8 @@
 # include <sys/time.h>	/* for gettimeofday */
 # include <stdlib.h>	/* for malloc */
 # include <unistd.h>	/* for usleep */
+
+# define MAX_INT_STR "2147483647"
 
 typedef struct s_philo
 {

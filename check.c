@@ -6,7 +6,7 @@
 /*   By: tstahlhu <tstahlhu@student.42berlin.de>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/12 13:15:39 by tstahlhu          #+#    #+#             */
-/*   Updated: 2024/02/12 16:22:40 by tstahlhu         ###   ########.fr       */
+/*   Updated: 2024/02/14 18:44:13 by tstahlhu         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,31 +41,6 @@ int	ft_atoi(const char *nptr)
 	return (ret * sign);
 }
 
-/*ft_strdup: duplicates given string and returns duplicate 
-	on failure it returns NULL*/
-
-char	*ft_strdup(const char *s)
-{
-	char	*cpy;
-	size_t	len;
-	size_t	i;
-
-	len = 0;
-	while (s && s[len] != '\0')
-		len++;
-	cpy = (char *)malloc(sizeof(*cpy) * (len + 1));
-	if (!cpy)
-		return (NULL);
-	i = 0;
-	while (i < len)
-	{
-		cpy[i] = s[i];
-		i++;
-	}
-	cpy[i] = '\0';
-	return (cpy);
-}
-
 /* ft_isdigit: checks if char is a digit
 	if it is, returns 1
 	if it is not a digit, returns 0 */
@@ -86,7 +61,6 @@ int	ft_isdigit(char c)
 int	ft_isint(char *str)
 {
 	int		i;
-	char	*max_int;
 
 	i = 0;
 	while (str[i] != '\0')
@@ -97,13 +71,12 @@ int	ft_isint(char *str)
 	}
 	if (i > 10)
 		return (0);
-	max_int = ft_strdup("2147483647");
 	if (i == 10)
 	{
 		i = 0;
-		while (i < 10 && str[i] >= max_int[i])
+		while (i < 10 && str[i] >= MAX_INT_STR[i])
 		{
-			if (str[i] > max_int[i])
+			if (str[i] > MAX_INT_STR[i])
 				return (0);
 			i++;
 		}

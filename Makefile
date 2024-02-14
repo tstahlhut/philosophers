@@ -6,13 +6,13 @@
 #    By: tstahlhu <tstahlhu@student.42berlin.de>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2023/09/04 11:56:29 by tstahlhu          #+#    #+#              #
-#    Updated: 2024/02/13 18:47:25 by tstahlhu         ###   ########.fr        #
+#    Updated: 2024/02/14 19:01:58 by tstahlhu         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 
 NAME =		philo
-CC =		cc -fsanitize=thread
+CC =		cc
 CFLAGS =	-Wall -Werror -Wextra
 
 CFILES =	philo.c utils.c check.c init.c monitor.c forks.c
