@@ -24,24 +24,23 @@ void	pick_up_left_fork(t_philo *phil)
 {
 	t_data	*data;
 	int		n;
-	int		wait_for_fork;
+	//int		wait_for_fork;
 
 	data = phil->data;
 	if (phil->pos == data->nb)
 		n = 0;
 	else
 		n = phil->pos;
-	wait_for_fork = 1;
-	while (wait_for_fork)
-	{
-		pthread_mutex_lock(&data->mutex_fork[n]);
-		if (data->forks[n] == 0)
-		{
-			data->forks[n] = 1;
-			wait_for_fork = 0;
-		}
-		pthread_mutex_unlock(&data->mutex_fork[n]);
-	}
+	//wait_for_fork = 1;
+//	while (wait_for_fork)
+//	{
+	pthread_mutex_lock(&data->mutex_fork[n]);
+	if (data->forks[n])
+		printf("ERROR: fork %i has value %i\n", phil->pos - 1, data->forks[phil->pos - 1]);
+	data->forks[n] = 1;
+		//	wait_for_fork = 0;
+		//pthread_mutex_unlock(&data->mutex_fork[n]);
+//	}
 	print_phil_status(data, phil, "has taken a fork");
 }
 
@@ -55,20 +54,19 @@ void	pick_up_left_fork(t_philo *phil)
 void	pick_up_right_fork(t_philo *phil)
 {
 	t_data	*data;
-	int		wait_for_fork;
+	//int		wait_for_fork;
 
 	data = phil->data;
-	wait_for_fork = 1;
-	while (wait_for_fork)
-	{
+	//wait_for_fork = 1;
+	//while (wait_for_fork)
+	//{
 		pthread_mutex_lock(&data->mutex_fork[phil->pos - 1]);
-		if (!data->forks[phil->pos - 1])
-		{
-			data->forks[phil->pos - 1] = 1;
-			wait_for_fork = 0;
-		}
-		pthread_mutex_unlock(&data->mutex_fork[phil->pos - 1]);
-	}
+		if (data->forks[phil->pos - 1])
+			printf("ERROR: fork %i has value %i\n", phil->pos - 1, data->forks[phil->pos - 1]);
+		data->forks[phil->pos - 1] = 1;
+			//wait_for_fork = 0;
+		//pthread_mutex_unlock(&data->mutex_fork[phil->pos - 1]);
+	//}
 	print_phil_status(data, phil, "has taken a fork");
 }
 
@@ -89,13 +87,13 @@ void	pick_up_forks(t_philo *phil)
 	}
 	else if (phil->pos % 2)
 	{
-		pick_up_left_fork(phil);
 		pick_up_right_fork(phil);
+		pick_up_left_fork(phil);
 	}
-	else
+	else if (phil->pos % 2 == 0)
 	{
-		pick_up_right_fork(phil);
 		pick_up_left_fork(phil);
+		pick_up_right_fork(phil);
 	}
 }
 
@@ -114,9 +112,9 @@ void	put_down_left_fork(t_philo *phil)
 		n = 0;
 	else
 		n = phil->pos;
-	pthread_mutex_lock(&data->mutex_fork[n]);
-	if (data->forks[n] == 0)
-		printf("ERROR: fork already put down, check code!\n");
+//	pthread_mutex_lock(&data->mutex_fork[n]);
+//	if (data->forks[n] == 0)
+//		printf("ERROR: fork %i already put down, check code!\n", n);
 	data->forks[n] = 0;
 	pthread_mutex_unlock(&data->mutex_fork[n]);
 }
@@ -130,9 +128,9 @@ void	put_down_right_fork(t_philo *phil)
 	t_data	*data;
 
 	data = phil->data;
-	pthread_mutex_lock(&data->mutex_fork[phil->pos - 1]);
-	if (data->forks[phil->pos - 1] == 0)
-		printf("ERROR: fork already put down, check code!\n");
+	//pthread_mutex_lock(&data->mutex_fork[phil->pos - 1]);
+//	if (data->forks[phil->pos - 1] == 0)
+//		printf("ERROR: fork %i already put down, check code!\n", phil->pos - 1);
 	data->forks[phil->pos - 1] = 0;
 	pthread_mutex_unlock(&data->mutex_fork[phil->pos - 1]);
 }

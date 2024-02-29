@@ -30,8 +30,9 @@ void	*monitor_death(void *arguments)
 	{
 		if (time_since_last_meal(data, phil) >= data->t_die)
 		{
-			print_phil_status(data, phil, "has died");
 			pthread_mutex_lock(&data->write);
+			if (data->stop == 0)
+				printf("%ld %i died\n", get_time(data->t_zero), phil->pos);
 			data->stop = 1;
 			pthread_mutex_unlock(&data->write);
 		}

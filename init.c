@@ -20,7 +20,7 @@ int	start_threads(t_data *data)
 {
 	int		i;
 
-	if (data->nb_meals > -1)
+	if (data->nb_meals > -1 && data->nb > 1)
 	{
 		if (pthread_create(&data->supervisor, NULL, &monitor_meals, data) != 0)
 			return (ft_error(data, "creating thread"));
@@ -31,6 +31,8 @@ int	start_threads(t_data *data)
 	{
 		if (pthread_create(&data->th[i], NULL, &routine, &data->phil[i]) != 0)
 			return (ft_error(data, "creating thread"));
+		if (pthread_create(&data->phil[i].monitor, NULL, &monitor_death, &data->phil[i]) != 0)
+			return (ft_error(data, "creating monitoring subthread\n"));
 	}
 	return (0);
 }

@@ -14,8 +14,10 @@
 
 void	print_phil_status(t_data *data, t_philo *phil, char *status)
 {
-	if (!stop_simulation(data))
+	pthread_mutex_lock(&data->write);
+	if (!data->stop)
 		printf("%ld %i %s\n", get_time(data->t_zero), phil->pos, status);
+	pthread_mutex_unlock(&data->write);
 }
 
 /* get_time: calculates elapsed time since time_zero in milliseconds
@@ -44,7 +46,10 @@ void	ft_exit(t_data *data)
 	if (data->mutex_fork)
 	{
 		while (++i < data->nb && data->mutex_init)
+		{
 			pthread_mutex_destroy(&data->mutex_fork[i]);
+			pthread_mutex_destroy(&data->phil[i].write);
+		}
 	}
 	pthread_mutex_destroy(&data->write);
 	i = -1;

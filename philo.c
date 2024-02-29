@@ -46,7 +46,8 @@ void	eating(t_philo *phil)
 	phil->meals++;
 	pthread_mutex_unlock(&phil->write);
 	put_down_left_fork(phil);
-	put_down_right_fork(phil);
+	if (data->nb > 1)
+		put_down_right_fork(phil);
 }
 
 /* routine: the routine each philosopher follows while the simulation runs
@@ -63,26 +64,29 @@ void	*routine(void *arguments)
 {
 	t_philo		*phil;
 	t_data		*data;
+	long int	t_think;
 
 	phil = (t_philo *)arguments;
 	data = phil->data;
-	if (pthread_create(&phil->monitor, NULL, &monitor_death, phil) != 0)
+	t_think = (data->t_die - data->t_eat - data->t_sleep) / 2;
+	/*if (pthread_create(&phil->monitor, NULL, &monitor_death, phil) != 0)
 	{
 		pthread_mutex_lock(&data->write);
 		data->stop = 1;
 		pthread_mutex_unlock(&data->write);
 		ft_error(data, "creating monitoring subthread\n");
-	}
+	}*/
 	while (!stop_simulation(data))
 	{
 		eating(phil);
 		print_phil_status(data, phil, "is sleeping");
 		usleep(phil->data->t_sleep * 1000);
 		print_phil_status(data, phil, "is thinking");
-		usleep(100);
+		if (t_think > 0)
+			usleep(t_think * 1000);
 	}
-	if (pthread_join(phil->monitor, NULL) != 0)
-		ft_error(data, "joining thread");
+	/*if (pthread_join(phil->monitor, NULL) != 0)
+		ft_error(data, "joining thread");*/
 	return (NULL);
 }
 
@@ -97,11 +101,12 @@ int	stop_threads(t_data *data)
 	i = -1;
 	while (++i < data->nb)
 	{
+		if (pthread_join(data->phil[i].monitor, NULL) != 0)
+			return (ft_error(data, "joining thread"));
 		if (pthread_join(data->th[i], NULL) != 0)
 			return (ft_error(data, "joining philo thread"));
-		pthread_mutex_destroy(&data->phil[i].write);
 	}
-	if (data->nb_meals > -1)
+	if (data->nb_meals > -1 && data->nb > 1)
 	{
 		if (pthread_join(data->supervisor, NULL) != 0)
 			return (ft_error(data, "joining supervisor thread"));

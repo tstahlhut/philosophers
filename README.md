@@ -149,11 +149,23 @@ ThreadSanitizer gives 1 Warning for our example and points out the line where th
 	ThreadSanitizer: reported 1 warnings
 </details>
 
-Otherwise, when you use valgrind, you can run it with --tool=helgrind:
+Additionally, when you use valgrind, you can run it with --tool=helgrind and with --tool=drd:
 
 	valgrind --tool=helgrind ./program_name
 
-But you cannot run fsanitize and helgrind simultaneously!
+	valgrind --tool=drd ./program_name
+
+These are the two tools with which 42 evaluators are prompted to test for data races in your program. They are said to be more precise than fsanitize but take a long time. So, for a first check, I would use fsanitize. 
+
+Be aware that you cannot run fsanitize and valgrind simultaneously!
+
+If helgrind stops the execution, it could be that it only follows one thread. Try the following additional flag:
+
+		valgrind --tool=helgrind --fair-sched=yes ./program_name
+
+However, your program should run with only --tool=helgrind in the end and report no errors. (Unsure about suppressed errors, though.)
+
+Note: As valgrind slows down the program, philosophers die even if they are not supposed to. This is normal.
 
 ### Mutexes
 
@@ -238,61 +250,6 @@ There are [multiple solutions](https://en.wikipedia.org/wiki/Dining_philosophers
 
 Lateron, I applied a solution that is very common at 42 and seems to me more efficient. In this solution the philosophers with an even number pick up their right fork first and the odd numbered philsophers their left fork first. Thus, half of the philosophers (rounded down, 2 if 5 philos) can eat simultaneously. Some even let the even numbered philosophers sleep at the beginning of the routine so that they can find a good rhythm. (But that sounds to me a little bit like cheating.)
 
-
-## Evaluating My Program
-
-The project has not yet been evaluated so I do not know if it passes the three evaluators and their tests or not. 
-
-### Status Quo
-
-Right now, on my VM, about every fifth time or less a philosopher dies when executing:
-
-	./philo 5 800 200 200 6
-
-This could be due to CPU overload (I checked with command top). Therefore, I will leave it as it is and test at 42 computers. 
-
-Right now, I do not know how to make it more efficient. 
-- The mutexes only lock for a very short sequence of code
-- Odd and even numbered philsophers pick up the forks in different sequence (I could insert a short usleep at the beginning of the routine for the even numbered philosopher but it feels like cheating)
-- The sequence of putting down the forks is the same for odd and even numbered philsosophers (changing that did not have an effect)
-- I have 1 monitoring thread (supervisor) that checks for each philosopher if they have eaten enough meals and then for all philsophers if they have eaten enough meals in total. I could give the first task to a monitoring thread for each philosopher but I doubt that it speeds things up. This would just mean that there are more threads competing for execution and more mutexes locked and unlocked. 
-- When putting down the forks, I also check their status. They should be 1 (as no philo can pick up a fork that is 1) but I just do this error check for myself to be sure that no philosopher steals forks. These lines could be omitted and would maybe add to performance. 
-
-#### Question: Can a philosopher die while eating?
-
-I decided to let a philosopher die even if they are eating and not checking for if they are eating. This means that if t_die = 200 and t_eat = 210, the philsopher dies of starvation although they are currently holding two forks and are eating. I decided to do so, because the subject states that: 
-
-	"If a philosopher didn’t start eating time_to_die milliseconds since the beginning of their last meal or the beginning of the simulation, they die."
-
-It nowhere states that a philosopher cannot die while eating.
-
-#### Tests Passed
-
-	./philo 4 310 200 100
-
-One philosopher should die.
-
-### Valgrind
-
-I ran valgrind and there are no memory leaks.
-
-#### Tests Run
-
-	valgrind ./philo 0 0 0 0 0
-	valgrind ./philo 1 0 0 0 0
-	valgrind ./philo 1 1 1 1 1
-	valgrind ./philo 2147483647 0 0 0 0
-	valgrind ./philo 0 2147483647 0 0 0
-	valgrind ./philo 0 2147483648 0 0 0
-	valgrind ./philo 5 800 200 200 6
-	valgrind ./philo 1 800 200 200
-
-Note: As valgrind slows down the program, philosophers die even if they are not supposed to. This is normal.
-
-### Norminette
-
-All *.c files are norminetted. In the header file the comments have to be removed for it to pass norminette. Otherwise, everything is "OK!".
-
 ## Usage
 
 Git clone the project and cd in folder:
@@ -316,3 +273,176 @@ All arguments must be integers between 0 and MAX_INT and represent the time in m
 	./philo 5 800 200 200 6
 
 If nb_of_times_each_philosopher_must_eat is given, the program exits when all philosophers have eaten at least nb_of_times_each_philosopher_must_eat (or earlier if a philsosopher dies). Otherwise, the program  only exits when a philosopher has died. If no one dies, it runs infinitely. 
+
+## Evaluating My Program
+
+The project failed the first evaluation round.
+
+- Helgrind and drd did not run.
+- If > 10 philosophers and t_die:800 t_eat:200 t_sleep:200 one philosopher died. It should pass: ./philo 200 800 200 200.
+- More than 1 philosopher died -> problem with printing death message.
+- all three philos should eat if ./philo 3 510 200 100
+
+### Changes Made
+
+- forks are locked again during the time of the meal (before I locked and unlocked again because I thought it would be faster but apparently it slowed down)
+- I introduced a usleep for thinking: if 800 200 200, I set it to 200 and it worked perfectly for 200 philosophers. Therefore, I calculated now: 
+
+		t_think = (800 - 200 - 200) / 2;
+
+- I print the death message in a different way, so that it is only printed once
+
+### What I did
+
+#### Picking up Forks
+
+Odd and even numbered philsophers pick up the forks in different sequence. At first I let only the first philosopher pick up the forks in a different order but this was too unefficient with a high number of philosophers.
+
+As it states specifically in the subject that each fork should be protected by a mutex, I introduced forks variables that are either 0 (not in use) or 1 (in use). However, the program runs best if I lock the used forks for the time they are used. (In the version I submitted first, the forks were unlocked, even when in use and only the value of the forks was checked, protected by a mutex.) It seems redundant to have a fork value and mutex when you could just have the forks as mutexes. But as in is required in the subject and evaluation sheet, I implemented it this way.
+
+#### Routine
+
+If there is a high number of philsophers they somehow do not come into a good rhythm so that no one starves. To help that rhythm, I inserted a specific time_to_think (t_think). It prevents some philosophers of eating too often and thinking too less. 
+
+I read in other's code that they inserted a usleep for the even numbered philosophers right at the beginning of the simulation to find a good rhythm. Too me, however, this feels like cheating as it is a one-time-action at the beginning that prevents an organic unfolding of things. 
+
+The sequence of putting down the forks is the same for odd and even numbered philsosophers (changing that did not have an effect).
+
+#### Monitoring Death and Meals
+
+I have 1 monitoring thread (supervisor) that checks for each philosopher if they have eaten enough meals and then for all philsophers if they have eaten enough meals in total. When there are a lot of philosophers, it takes some time for the supervisor to finish the simulation when all have eaten enough meals because it checks in a loop for every philsopher. But as the subject states that "If all philosophers have eaten at least number_of_times_each_philosopher_must_eat times, the simulation stops", it does not matter if it takes some time before it stops. It says "at least" and it does not say that it should stop immediately. 
+
+#### Question: Can a philosopher die while eating?
+
+I decided to let a philosopher die even if they are eating and not checking for if they are eating. This means that if t_die = 200 and t_eat = 210, the philsopher dies of starvation although they are currently holding two forks and are eating. I decided to do so, because the subject states that: 
+
+	"If a philosopher didn’t start eating time_to_die milliseconds since the beginning of their last meal or the beginning of the simulation, they die."
+
+It nowhere states that a philosopher cannot die while eating.
+
+### Tests Passed
+
+	./philo 4 310 200 100
+
+One philosopher should die.
+
+#### Valgrind
+
+I ran valgrind and there are no memory leaks.
+
+#### Helgrind
+
+
+#### drd
+
+### Tests Run
+
+All the test were run 4 times: (1) no tester, (2) valgrind, (3) helgrind, (4) drd.
+
+	./philo 0 0 0 0 0
+	valgrind ./philo 0 0 0 0 0
+	valgrind --tool=helgrind ./philo 0 0 0 0 0
+	valgrind --tool=drd ./philo 0 0 0 0 0
+
+In the following I only show possible errors. 
+
+#### 1: ./philo 0 0 0 0 0 - suppressed errors
+	
+	valgrind --tool=drd -s ./philo 0 0 0 0 0
+	
+	==57388== drd, a thread error detector
+	==57388== Copyright (C) 2006-2020, and GNU GPL'd, by Bart Van Assche.
+	==57388== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+	==57388== Command: ./philo 0 0 0 0 0
+	==57388== 
+	==57388== 
+	==57388== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 16 from 10)
+	--57388-- 
+	--57388-- used_suppression:     16 drd-ld /usr/libexec/valgrind/default.supp:566
+	==57388== 
+	==57388== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 16 from 10)
+
+What about suppressed errors? In this example only drd shows 16 but looking at them it seems not be a problem with my program. Anyway, I do not create any threads in this case. 
+
+#### 2: ./philo 1 0 0 0 0 - suppressed errors
+
+	valgrind --tool=helgrind -s ./philo 1 0 0 0 0
+	
+	==57883== Helgrind, a thread error detector
+	==57883== Copyright (C) 2007-2017, and GNU GPL'd, by OpenWorks LLP et al.
+	==57883== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+	==57883== Command: ./philo 1 0 0 0 0
+	==57883== 
+	==57883== 
+	==57883== Use --history-level=approx or =none to gain increased speed, at
+	==57883== the cost of reduced accuracy of conflicting-access information
+	==57883== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 14 from 14)
+	--57883-- 
+	--57883-- used_suppression:     14 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+	==57883== 
+	==57883== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 14 from 14)
+
+	valgrind --tool=drd -s ./philo 1 0 0 0 0
+
+	==59567== drd, a thread error detector
+	==59567== Copyright (C) 2006-2020, and GNU GPL'd, by Bart Van Assche.
+	==59567== Using Valgrind-3.18.1 and LibVEX; rerun with -h for copyright info
+	==59567== Command: ./philo 1 0 0 0 0
+	==59567== 
+	==59567== 
+	==59567== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 16 from 10)
+	--59567-- 
+	--59567-- used_suppression:     16 drd-ld /usr/libexec/valgrind/default.supp:566
+	==59567== 
+	==59567== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 16 from 10)
+
+#### ./philo 1 1 1 1 1 - suppressed errors
+
+	valgrind --tool=helgrind -s ./philo 1 1 1 1 1
+
+	--60411-- used_suppression:     44 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+	==60411== 
+	==60411== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 44 from 41)
+
+	valgrind --tool=drd -s ./philo 1 1 1 1 1
+
+	--60662-- used_suppression:     18 drd-ld /usr/libexec/valgrind/default.supp:566
+	==60662== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
+
+#### ./philo 2147483647 0 0 0 0 - OK!
+
+#### ./philo 0 2147483647 0 0 0 - OK!
+
+#### ./philo 0 2147483648 0 0 0 - OK!
+
+#### ./philo 5 800 200 200 - suppressed errors
+
+	valgrind --tool=helgrind -s ./philo 5 800 200 200
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 270423 from 42)
+-	--62970-- used_suppression: 270423 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+
+	valgrind --tool=drd -s ./philo 5 800 200 200
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
+	--63050-- used_suppression:     18 drd-ld /usr/libexec/valgrind/default.supp:566
+
+#### ./philo 5 800 200 200 7 - helgrind not running!
+
+	./philo 5 800 200 200 7 | grep eating | wc
+     35     140     582
+	./philo 5 800 200 200 7 | grep eating | wc
+     36     144     599
+
+-> OK!
+
+#### ./philo 1 800 200 200 - suppressed errors
+
+	valgrind --tool=drd  -s ./philo 1 800 200 200
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
+	used_suppression:     18 drd-ld /usr/libexec/valgrind/default.supp:566
+
+	valgrind --tool=helgrind -s ./philo 1 800 200 200
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 268697 from 41)
+	used_suppression: 268697 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+	
+#### Norminette
+
