@@ -425,7 +425,7 @@ What about suppressed errors? In this example only drd shows 16 but looking at t
 	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
 	--63050-- used_suppression:     18 drd-ld /usr/libexec/valgrind/default.supp:566
 
-#### ./philo 5 800 200 200 7 - helgrind not running!
+#### ./philo 5 800 200 200 7 - suppressed errors
 
 	./philo 5 800 200 200 7 | grep eating | wc
      35     140     582
@@ -433,6 +433,14 @@ What about suppressed errors? In this example only drd shows 16 but looking at t
      36     144     599
 
 -> OK!
+
+	valgrind --tool=drd -s ./philo 5 800 200 200 7
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
+	used_suppression:     18 drd-ld /usr/libexec/valgrind/default.supp:566
+
+	valgrind --tool=helgrind -s ./philo 5 800 200 200 7
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 275904 from 49)
+	used_suppression: 275904 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
 
 #### ./philo 1 800 200 200 - suppressed errors
 
