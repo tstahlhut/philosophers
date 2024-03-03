@@ -69,13 +69,6 @@ void	*routine(void *arguments)
 	phil = (t_philo *)arguments;
 	data = phil->data;
 	t_think = (data->t_die - data->t_eat - data->t_sleep) / 2;
-	/*if (pthread_create(&phil->monitor, NULL, &monitor_death, phil) != 0)
-	{
-		pthread_mutex_lock(&data->write);
-		data->stop = 1;
-		pthread_mutex_unlock(&data->write);
-		ft_error(data, "creating monitoring subthread\n");
-	}*/
 	while (!stop_simulation(data))
 	{
 		eating(phil);
@@ -85,8 +78,6 @@ void	*routine(void *arguments)
 		if (t_think > 0)
 			usleep(t_think * 1000);
 	}
-	/*if (pthread_join(phil->monitor, NULL) != 0)
-		ft_error(data, "joining thread");*/
 	return (NULL);
 }
 

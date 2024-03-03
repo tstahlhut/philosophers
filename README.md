@@ -335,7 +335,7 @@ I ran valgrind and there are no memory leaks.
 
 #### drd
 
-### Tests Run
+<details> <summary> Tests Run </summary>
 
 All the test were run 4 times: (1) no tester, (2) valgrind, (3) helgrind, (4) drd.
 
@@ -451,6 +451,30 @@ What about suppressed errors? In this example only drd shows 16 but looking at t
 	valgrind --tool=helgrind -s ./philo 1 800 200 200
 	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 268697 from 41)
 	used_suppression: 268697 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+
+#### ./philo 4 410 200 200
+
+suppressed errors
+
+	valgrind --tool=helgrind -s ./philo 4 410 200 200
+	used_suppression: 138977 helgrind-glibc2X-005 /usr/libexec/valgrind/default.supp:947
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 138977 from 42)
+
+	valgrind --tool=drd -s ./philo 4 410 200 200
+	used_suppression:     18 drd-ld /usr/libexec/valgrind/default.supp:566
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
+
+#### ./philo 4 310 200 100
+suppressed errors:
+
+	valgrind --tool=helgrind ./philo 4 310 200 100
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 104222 from 42)
+
+	valgrind --tool=drd ./philo 4 310 200 100
+	ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 18 from 12)
+	</details>
 	
 #### Norminette
+
+	OK!
 
