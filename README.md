@@ -276,15 +276,17 @@ If nb_of_times_each_philosopher_must_eat is given, the program exits when all ph
 
 ## Evaluating My Program
 
-The project failed the first evaluation round.
+It passed with 100% the evaluation of three peers. 
 
+### Changes Made after 1. failed Evaluation
+
+The very first failed because:
 - Helgrind and drd did not run.
 - If > 10 philosophers and t_die:800 t_eat:200 t_sleep:200 one philosopher died. It should pass: ./philo 200 800 200 200.
 - More than 1 philosopher died -> problem with printing death message.
 - all three philos should eat if ./philo 3 510 200 100
 
-### Changes Made
-
+Changes made:
 - forks are locked again during the time of the meal (before I locked and unlocked again because I thought it would be faster but apparently it slowed down)
 - I introduced a usleep for thinking: if 800 200 200, I set it to 200 and it worked perfectly for 200 philosophers. Therefore, I calculated now: 
 
